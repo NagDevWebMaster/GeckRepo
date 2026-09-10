@@ -246,7 +246,10 @@ public class GeckoPageKeyboard : MonoBehaviour
         "*\"':;!?"
     };
 
-    private const int kCols = 10;   // widest row (the digit row / top letter row)
+    // Widest row is the top letter row (10 keys) plus its trailing Backspace
+    // (1.3 keys wide) - rounded up so the dialog panel is never narrower
+    // than the row it has to contain.
+    private const int kCols = 12;
 
     private static Shader _roundedShader;
     private static Shader RoundedShader =>
@@ -529,9 +532,15 @@ public class GeckoPageKeyboard : MonoBehaviour
         var dialogGo = new GameObject("Dialog");
         dialogGo.transform.SetParent(_root, false);
         dialogGo.transform.position = anchor;
+        // tiltDegrees is a page-relative-mode thing ("prop the dialog up like
+        // a little desk" - see its tooltip): it was being applied here
+        // unconditionally, which pitched a follow-viewer keyboard 20 degrees
+        // down at the floor instead of standing it upright at eye level.
         // Hinge at the dialog's own centre: a small panel tilting about its
         // centre reads as "propped up", not "sinking into the floor".
-        dialogGo.transform.rotation = _facing * Quaternion.Euler(-tiltDegrees, 0f, 0f);
+        dialogGo.transform.rotation = followViewer
+                                     ? _facing
+                                     : _facing * Quaternion.Euler(-tiltDegrees, 0f, 0f);
         _dialogRoot = dialogGo.transform;
 
         CreatePanel(dialogW, dialogH);
@@ -623,7 +632,8 @@ public class GeckoPageKeyboard : MonoBehaviour
     /// a plain Unlit fill (square corners) if the shader failed to load - never
     /// a missing-shader magenta quad.
     /// </summary>
-    private Material MakeRoundedMaterial(Color color, float w, float h, float cornerRadius)
+    private Material MakeRoundedMaterial(Color color, float w, float h, float cornerRadius,
+                                         float gradientTop = 1f, float gradientBottom = 1f)
     {
         Shader shader = RoundedShader
                       ?? Shader.Find("Universal Render Pipeline/Unlit")
@@ -634,12 +644,19 @@ public class GeckoPageKeyboard : MonoBehaviour
         if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
         if (mat.HasProperty("_Size")) mat.SetVector("_Size", new Vector4(w, h, 0f, 0f));
         if (mat.HasProperty("_CornerRadius")) mat.SetFloat("_CornerRadius", cornerRadius);
+        if (mat.HasProperty("_GradientTop")) mat.SetFloat("_GradientTop", gradientTop);
+        if (mat.HasProperty("_GradientBottom")) mat.SetFloat("_GradientBottom", gradientBottom);
         return mat;
     }
 
-    /// <summary>Builds a rounded-rect quad parented and positioned like any other dialog element.</summary>
+    /// <summary>
+    /// Builds a rounded-rect quad parented and positioned like any other
+    /// dialog element. gradientTop/gradientBottom default to 1 (flat, no
+    /// gradient) - only the dialog panel background passes anything else.
+    /// </summary>
     private GameObject CreateRoundedQuad(string name, Transform parent, Vector3 localPos,
-                                         float w, float h, Color color, float cornerRadius)
+                                         float w, float h, Color color, float cornerRadius,
+                                         float gradientTop = 1f, float gradientBottom = 1f)
     {
         var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
         quad.name = name;
@@ -650,7 +667,8 @@ public class GeckoPageKeyboard : MonoBehaviour
         quad.transform.localRotation = Quaternion.identity;
         quad.transform.localScale = new Vector3(w, h, 1f);
 
-        quad.GetComponent<Renderer>().sharedMaterial = MakeRoundedMaterial(color, w, h, cornerRadius);
+        quad.GetComponent<Renderer>().sharedMaterial =
+            MakeRoundedMaterial(color, w, h, cornerRadius, gradientTop, gradientBottom);
         return quad;
     }
 
@@ -672,7 +690,11 @@ public class GeckoPageKeyboard : MonoBehaviour
     {
         MakeBackdrop("PanelBorder", w + padding * 0.6f, h + padding * 0.6f,
                     -0.002f, panelBorderColor);
-        MakeBackdrop("Panel", w, h, -0.004f, panelColor);
+        // Subtle grey gradient, lighter at the top - the panel is the only
+        // element that gets one; keys stay flat (both multipliers default
+        // to 1) so hover/press feedback stays crisp.
+        CreateRoundedQuad("Panel", _dialogRoot, new Vector3(0f, 0f, -0.004f), w, h,
+                          panelColor, dialogCornerRadius, gradientTop: 1.25f, gradientBottom: 0.82f);
     }
 
     private void MakeBackdrop(string name, float w, float h, float zOffset, Color color)
@@ -680,72 +702,107 @@ public class GeckoPageKeyboard : MonoBehaviour
         CreateRoundedQuad(name, _dialogRoot, new Vector3(0f, 0f, zOffset), w, h, color, dialogCornerRadius);
     }
 
+    /// <summary>
+    /// Builds one letter row starting at localX, returning the x position
+    /// just past its last key (localX + row width) - callers use that to
+    /// place a trailing action key (Backspace/Enter) flush against the row,
+    /// matching the reference keyboard's layout instead of penning every
+    /// action key into its own bottom row.
+    /// </summary>
+    private float BuildLetterRow(int r, float startX, float y, float keyW, float keyH)
+    {
+        string letters = kLetterRows[r];
+        for (int c = 0; c < letters.Length; c++)
+        {
+            int row = r, col = c;                       // captured per key
+            var pos = new Vector3(startX + c * (keyW + gap), y, 0f);
+            var key = MakeKey($"Key_{r}_{c}", "", _keysRoot, pos, keyW, keyH, null);
+            key.onClick = () => TypeChar(CharAt(row, col));
+            _charKeys.Add(key);
+            _charLabels.Add(key.GetComponentInChildren<TextMeshPro>());
+
+            // Small secondary character in the corner, always showing the
+            // symbol layer regardless of the current shift/layer state -
+            // matches the reference keyboard's number/symbol hints.
+            if (r < kSymbolRows.Length && c < kSymbolRows[r].Length)
+                AddCornerHint(key.transform, kSymbolRows[r][c].ToString(), keyW, keyH);
+        }
+        return startX + letters.Length * (keyW + gap);
+    }
+
+    /// <summary>
+    /// Layout matches the reference keyboard: Backspace ends the top letter
+    /// row, Enter ends the middle one, Shift starts the bottom one, and the
+    /// last row is just layer-toggle / space / hide - not one long row of
+    /// every action key.
+    /// </summary>
     private void BuildKeys(float dialogW, float dialogH, int rows)
     {
         float keyH = keySize;
         float keyW = keySize;
+        float actW = keyW * 1.3f;
+        float wideW = keyW * 3f + gap * 2f;
 
         // Local space of _keysRoot, which is centred on the dialog: top row
         // starts just under the top padding.
         float topY = dialogH * 0.5f - padding - keyH * 0.5f;
 
-        for (int r = 0; r < kLetterRows.Length; r++)
+        // Row 0: q w e r t y u i o p, then Backspace.
         {
-            int len = kLetterRows[r].Length;
-            float rowW = len * keyW + (len - 1) * gap;
+            float y = topY;
+            int n = kLetterRows[0].Length;
+            float rowW = n * keyW + (n - 1) * gap + gap + actW;
             float startX = -rowW * 0.5f + keyW * 0.5f;
-            float y = topY - r * (keyH + gap);
+            float nextX = BuildLetterRow(0, startX, y, keyW, keyH);
 
-            for (int c = 0; c < len; c++)
-            {
-                int row = r, col = c;                       // captured per key
-                var pos = new Vector3(startX + c * (keyW + gap), y, 0f);
-                var key = MakeKey($"Key_{r}_{c}", "", _keysRoot, pos, keyW, keyH, null);
-                key.onClick = () => TypeChar(CharAt(row, col));
-                _charKeys.Add(key);
-                _charLabels.Add(key.GetComponentInChildren<TextMeshPro>());
-
-                // Small secondary character in the corner, always showing the
-                // symbol layer regardless of the current shift/layer state -
-                // matches the reference keyboard's number/symbol hints.
-                if (r < kSymbolRows.Length && c < kSymbolRows[r].Length)
-                    AddCornerHint(key.transform, kSymbolRows[r][c].ToString(), keyW, keyH);
-            }
+            MakeKey("Backspace", "⌫", _keysRoot, new Vector3(nextX - keyW * 0.5f + gap + actW * 0.5f, y, 0f),
+                    actW, keyH, () => _browser.SendBackspace(), _iconBackspace);
         }
 
-        // Action row: shift | layer | space | backspace | enter | hide.
-        float ay = topY - kLetterRows.Length * (keyH + gap);
-        float wideW = keyW * 3f + gap * 2f;                // space
-        float actW = keyW * 1.3f;
+        // Row 1: a s d f g h j k l, then Enter.
+        {
+            float y = topY - 1 * (keyH + gap);
+            int n = kLetterRows[1].Length;
+            float rowW = n * keyW + (n - 1) * gap + gap + actW;
+            float startX = -rowW * 0.5f + keyW * 0.5f;
+            float nextX = BuildLetterRow(1, startX, y, keyW, keyH);
 
-        float totalW = actW * 5f + wideW + gap * 5f;
-        float ax = -totalW * 0.5f + actW * 0.5f;
+            var enter = MakeKey("Enter", "↵", _keysRoot, new Vector3(nextX - keyW * 0.5f + gap + actW * 0.5f, y, 0f),
+                                actW, keyH, PressEnter, _iconEnter);
+            enter.SetColors(new Color(0.10f, 0.45f, 0.25f, 1f),
+                            new Color(0.14f, 0.60f, 0.33f, 1f),
+                            new Color(0.10f, 0.70f, 0.40f, 1f));
+        }
 
-        _shiftBtn = MakeKey("Shift", "⇧", _keysRoot, new Vector3(ax, ay, 0f),
-                            actW, keyH, ToggleShift, _iconShift);
-        ax += actW * 0.5f + gap + actW * 0.5f;
+        // Row 2: Shift, then z x c v b n m.
+        {
+            float y = topY - 2 * (keyH + gap);
+            int n = kLetterRows[2].Length;
+            float rowW = actW + gap + n * keyW + (n - 1) * gap;
+            float startX = -rowW * 0.5f;
 
-        _layerBtn = MakeKey("Layer", "?123", _keysRoot, new Vector3(ax, ay, 0f),
-                            actW, keyH, ToggleLayer);
-        ax += actW * 0.5f + gap + wideW * 0.5f;
+            _shiftBtn = MakeKey("Shift", "⇧", _keysRoot, new Vector3(startX + actW * 0.5f, y, 0f),
+                                actW, keyH, ToggleShift, _iconShift);
+            BuildLetterRow(2, startX + actW + gap + keyW * 0.5f, y, keyW, keyH);
+        }
 
-        MakeKey("Space", "space", _keysRoot, new Vector3(ax, ay, 0f),
-                wideW, keyH, () => TypeChar(" "));
-        ax += wideW * 0.5f + gap + actW * 0.5f;
+        // Row 3 (action row): layer toggle | space (blank) | hide.
+        {
+            float y = topY - kLetterRows.Length * (keyH + gap);
+            float totalW = actW * 2f + wideW + gap * 2f;
+            float x = -totalW * 0.5f + actW * 0.5f;
 
-        MakeKey("Backspace", "⌫", _keysRoot, new Vector3(ax, ay, 0f),
-                actW, keyH, () => _browser.SendBackspace(), _iconBackspace);
-        ax += actW + gap;
+            _layerBtn = MakeKey("Layer", "?123", _keysRoot, new Vector3(x, y, 0f),
+                                actW, keyH, ToggleLayer);
+            x += actW * 0.5f + gap + wideW * 0.5f;
 
-        var enter = MakeKey("Enter", "↵", _keysRoot, new Vector3(ax, ay, 0f),
-                            actW, keyH, PressEnter, _iconEnter);
-        enter.SetColors(new Color(0.10f, 0.45f, 0.25f, 1f),
-                        new Color(0.14f, 0.60f, 0.33f, 1f),
-                        new Color(0.10f, 0.70f, 0.40f, 1f));
-        ax += actW + gap;
+            MakeKey("Space", "", _keysRoot, new Vector3(x, y, 0f),
+                    wideW, keyH, () => TypeChar(" "));
+            x += wideW * 0.5f + gap + actW * 0.5f;
 
-        MakeKey("Hide", "✕", _keysRoot, new Vector3(ax, ay, 0f),
-                actW, keyH, Hide, _iconClose);
+            MakeKey("Hide", "✕", _keysRoot, new Vector3(x, y, 0f),
+                    actW, keyH, Hide, _iconClose);
+        }
 
         RefreshLabels();
     }
@@ -803,8 +860,10 @@ public class GeckoPageKeyboard : MonoBehaviour
             tmp.enableAutoSizing = true;
             tmp.fontSizeMin = 0.01f;
             tmp.fontSizeMax = 500f;
-            // Margin keeps glyphs off the keycap's edge instead of touching it.
-            tmp.margin = new Vector4(w * 0.12f, h * 0.12f, w * 0.12f, h * 0.12f);
+            // Margin keeps glyphs off the keycap's edge instead of touching it,
+            // and is the actual size control here since auto-sizing fills
+            // whatever space margin leaves - a bigger margin is a smaller glyph.
+            tmp.margin = new Vector4(w * 0.26f, h * 0.26f, w * 0.26f, h * 0.26f);
         }
 
         return btn;

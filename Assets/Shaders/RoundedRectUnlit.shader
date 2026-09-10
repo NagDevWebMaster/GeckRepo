@@ -9,6 +9,14 @@
 // creation. _BaseColor is written every frame by GeckoUIButton's
 // MaterialPropertyBlock (hover/press colours) - _CornerRadius/_Size are
 // plain material properties set once and never touched by that block.
+//
+// _GradientTop/_GradientBottom multiply _BaseColor rather than exposing a
+// second independent colour, specifically so a hover/press colour change
+// (which only ever touches _BaseColor via the property block) still shades
+// the WHOLE quad, top and bottom together, instead of flashing two-tone
+// while _BaseColor moves but a separate top colour sits still. Both default
+// to 1 (no gradient, identical to a flat fill) - only the dialog panel
+// background sets them to anything else.
 Shader "Custom/RoundedRectUnlit"
 {
     Properties
@@ -16,6 +24,8 @@ Shader "Custom/RoundedRectUnlit"
         _BaseColor("Color", Color) = (1, 1, 1, 1)
         _Size("Size (world units, w/h)", Vector) = (1, 1, 0, 0)
         _CornerRadius("Corner Radius (world units)", Float) = 0.01
+        _GradientTop("Gradient Top Multiplier", Float) = 1.0
+        _GradientBottom("Gradient Bottom Multiplier", Float) = 1.0
     }
     SubShader
     {
@@ -54,6 +64,8 @@ Shader "Custom/RoundedRectUnlit"
             half4 _BaseColor;
             float4 _Size;
             float _CornerRadius;
+            float _GradientTop;
+            float _GradientBottom;
             CBUFFER_END
 
             Varyings Vert(Attributes IN)
@@ -82,7 +94,8 @@ Shader "Custom/RoundedRectUnlit"
                 float alpha = 1.0 - smoothstep(-aa, aa, dist);
                 clip(alpha - 0.001);
 
-                return half4(_BaseColor.rgb, _BaseColor.a * alpha);
+                float shade = lerp(_GradientBottom, _GradientTop, IN.uv.y);
+                return half4(_BaseColor.rgb * shade, _BaseColor.a * alpha);
             }
             ENDHLSL
         }
