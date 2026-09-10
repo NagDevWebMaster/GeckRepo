@@ -36,6 +36,7 @@ namespace VRCinema
 
         private Coroutine _running;
         private Transform _activeTheaterRoot;
+        private Renderer _activeScreenRenderer;
         private bool _isBlackedOut;
 
         // ---------------------------------------------------------------------
@@ -48,6 +49,7 @@ namespace VRCinema
             if (_running != null) StopCoroutine(_running);
 
             _activeTheaterRoot = theaterRoot;
+            _activeScreenRenderer = screenRenderer;
             _isBlackedOut = false;
 
             Light[] lights = theaterRoot.GetComponentsInChildren<Light>(true);
@@ -105,7 +107,21 @@ namespace VRCinema
         public void ToggleBlackout()
         {
             if (_activeTheaterRoot == null) return;
-            if (_running != null) { StopCoroutine(_running); _running = null; }
+            if (_running != null)
+            {
+                StopCoroutine(_running);
+                _running = null;
+
+                if (_activeScreenRenderer != null)
+                {
+                    Color c = _activeScreenRenderer.material.color;
+                    c.a = 1f;
+                    _activeScreenRenderer.material.color = c;
+
+                    var vulkanRenderer = _activeScreenRenderer.GetComponent<GeckoVulkanRenderer>();
+                    if (vulkanRenderer != null) vulkanRenderer.ResumeMedia();
+                }
+            }
 
             _isBlackedOut = !_isBlackedOut;
             Light[] lights = _activeTheaterRoot.GetComponentsInChildren<Light>(true);
