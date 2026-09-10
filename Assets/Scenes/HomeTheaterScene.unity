@@ -5694,6 +5694,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1671301691}
   - component: {fileID: 1671301690}
+  - component: {fileID: 1671301692}
   m_Layer: 0
   m_Name: Cinema Navigation
   m_TagString: Untagged
@@ -5735,6 +5736,7 @@ MonoBehaviour:
   playerRig: {fileID: 1462211158}
   menu: {fileID: 879647085}
   browserPlane: {fileID: 1285361688}
+  preShowSequencer: {fileID: 1671301692}
   activateOnStart: 1
   startIn: 0
 --- !u!4 &1671301691
@@ -5752,6 +5754,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1671301692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1671301689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d04df2df0d8c4c2a87d712373d857bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VRCinema.PreShowSequencer
+  dimFactor: 0.35
+  lightsDuration: 1.2
+  fadeDuration: 1
 --- !u!1 &1674567054
 GameObject:
   m_ObjectHideFlags: 0

@@ -85,6 +85,10 @@ namespace VRCinema
                                  "between theaters. Leave empty to look one up by its renderer.")]
         private Transform browserPlane;
 
+        [SerializeField, Tooltip("Runs the light-dim + screen-fade beat when arriving at a " +
+                                 "theater. Leave empty to look one up in the scene.")]
+        private PreShowSequencer preShowSequencer;
+
         [SerializeField, Tooltip("Activate one destination on load, so the scene does not " +
                                  "start with every theater showing at once.")]
         private bool activateOnStart = true;
@@ -160,6 +164,16 @@ namespace VRCinema
                 return false;
             }
 
+            // Pausing is about leaving whatever screen was showing, not about
+            // where we're headed - fires for every destination, including
+            // Lobby, unlike the dim/fade/resume sequence below.
+            Transform currentPlane = ResolveBrowserPlane();
+            if (currentPlane != null)
+            {
+                var currentRenderer = currentPlane.GetComponent<GeckoVulkanRenderer>();
+                if (currentRenderer != null) currentRenderer.PauseMedia();
+            }
+
             // Only ever touch the destinations this component owns - never sweep the
             // scene, or the browser plane and the rig would get caught in it.
             SetActive(theater1, d);
@@ -204,6 +218,9 @@ namespace VRCinema
 
             var curver = plane.GetComponent<GeckoScreenCurver>();
             if (curver != null) curver.Rebuild();
+
+            if (preShowSequencer != null)
+                preShowSequencer.Play(d.root.transform, plane.GetComponent<Renderer>());
         }
 
         private Transform ResolveBrowserPlane()
