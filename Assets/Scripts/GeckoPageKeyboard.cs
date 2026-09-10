@@ -158,8 +158,22 @@ public class GeckoPageKeyboard : MonoBehaviour
     public bool autoUnshift = true;
 
     [Header("Look")]
-    public Color panelColor = new Color(0.06f, 0.065f, 0.08f, 0.96f);
-    public Color panelBorderColor = new Color(0.02f, 0.02f, 0.03f, 1f);
+    public Color panelColor = new Color(0.11f, 0.11f, 0.12f, 0.98f);
+    public Color panelBorderColor = new Color(0.03f, 0.03f, 0.04f, 1f);
+
+    [Tooltip("Keycap fill. Hover/pressed come from the same saturated-cyan " +
+             "scheme GeckoUIButton defaults to unless overridden here.")]
+    public Color keyColor = new Color(0.165f, 0.165f, 0.180f, 1f);
+    public Color keyHoverColor = new Color(0.22f, 0.22f, 0.24f, 1f);
+    public Color keyPressedColor = new Color(0.27f, 0.27f, 0.31f, 1f);
+    [Tooltip("Solid, not translucent - the shader is opaque + alpha-tested " +
+             "(cutout) rather than alpha-blended, for reliable draw order " +
+             "against the panel and the rest of the stack. See RoundedRectUnlit.shader.")]
+    public Color keyShadowColor = new Color(0.045f, 0.045f, 0.05f, 1f);
+
+    [Range(0f, 0.02f)] public float keyCornerRadius = 0.006f;
+    [Range(0f, 0.02f)] public float dialogCornerRadius = 0.014f;
+    [Range(0f, 0.006f)] public float keyShadowOffset = 0.0025f;
 
     [Header("Drag & Resize")]
     [Tooltip("Draw a grip bar above the tab so the whole cluster can be dragged.")]
@@ -233,6 +247,10 @@ public class GeckoPageKeyboard : MonoBehaviour
     };
 
     private const int kCols = 10;   // widest row (the digit row / top letter row)
+
+    private static Shader _roundedShader;
+    private static Shader RoundedShader =>
+        _roundedShader != null ? _roundedShader : (_roundedShader = Shader.Find("Custom/RoundedRectUnlit"));
 
     public bool IsOpen => _dialogRoot != null && _dialogRoot.gameObject.activeSelf;
 
@@ -575,15 +593,45 @@ public class GeckoPageKeyboard : MonoBehaviour
         quad.transform.rotation = _facing;
         quad.transform.localScale = new Vector3(w, h, 1f);
 
-        Shader shader = Shader.Find("Universal Render Pipeline/Unlit")
+        quad.GetComponent<Renderer>().sharedMaterial = MakeRoundedMaterial(color, w, h, keyCornerRadius);
+
+        return quad.AddComponent<XRSimpleInteractable>();
+    }
+
+    /// <summary>
+    /// A material using the rounded-rect shader when available, falling back to
+    /// a plain Unlit fill (square corners) if the shader failed to load - never
+    /// a missing-shader magenta quad.
+    /// </summary>
+    private Material MakeRoundedMaterial(Color color, float w, float h, float cornerRadius)
+    {
+        Shader shader = RoundedShader
+                      ?? Shader.Find("Universal Render Pipeline/Unlit")
                       ?? _browser.GetComponent<Renderer>().sharedMaterial.shader;
         var mat = new Material(shader);
         mat.mainTexture = null;
         if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
         if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
-        quad.GetComponent<Renderer>().sharedMaterial = mat;
+        if (mat.HasProperty("_Size")) mat.SetVector("_Size", new Vector4(w, h, 0f, 0f));
+        if (mat.HasProperty("_CornerRadius")) mat.SetFloat("_CornerRadius", cornerRadius);
+        return mat;
+    }
 
-        return quad.AddComponent<XRSimpleInteractable>();
+    /// <summary>Builds a rounded-rect quad parented and positioned like any other dialog element.</summary>
+    private GameObject CreateRoundedQuad(string name, Transform parent, Vector3 localPos,
+                                         float w, float h, Color color, float cornerRadius)
+    {
+        var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        quad.name = name;
+        Destroy(quad.GetComponent<Collider>());   // callers add their own if they need one
+
+        quad.transform.SetParent(parent, false);
+        quad.transform.localPosition = localPos;
+        quad.transform.localRotation = Quaternion.identity;
+        quad.transform.localScale = new Vector3(w, h, 1f);
+
+        quad.GetComponent<Renderer>().sharedMaterial = MakeRoundedMaterial(color, w, h, cornerRadius);
+        return quad;
     }
 
     /// <summary>
@@ -609,20 +657,7 @@ public class GeckoPageKeyboard : MonoBehaviour
 
     private void MakeBackdrop(string name, float w, float h, float zOffset, Color color)
     {
-        var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        quad.name = name;
-        Destroy(quad.GetComponent<Collider>());   // decorative only - never blocks the ray
-
-        quad.transform.SetParent(_dialogRoot, false);
-        quad.transform.localPosition = new Vector3(0f, 0f, zOffset);
-        quad.transform.localRotation = Quaternion.identity;
-        quad.transform.localScale = new Vector3(w, h, 1f);
-
-        var mat = new Material(_browser.GetComponent<Renderer>().sharedMaterial.shader);
-        mat.mainTexture = null;
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
-        if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
-        quad.GetComponent<Renderer>().sharedMaterial = mat;
+        CreateRoundedQuad(name, _dialogRoot, new Vector3(0f, 0f, zOffset), w, h, color, dialogCornerRadius);
     }
 
     private void BuildKeys(float dialogW, float dialogH, int rows)
@@ -649,6 +684,12 @@ public class GeckoPageKeyboard : MonoBehaviour
                 key.onClick = () => TypeChar(CharAt(row, col));
                 _charKeys.Add(key);
                 _charLabels.Add(key.GetComponentInChildren<TextMeshPro>());
+
+                // Small secondary character in the corner, always showing the
+                // symbol layer regardless of the current shift/layer state -
+                // matches the reference keyboard's number/symbol hints.
+                if (r < kSymbolRows.Length && c < kSymbolRows[r].Length)
+                    AddCornerHint(key.transform, kSymbolRows[r][c].ToString(), keyW, keyH);
             }
         }
 
@@ -693,29 +734,23 @@ public class GeckoPageKeyboard : MonoBehaviour
                                   Vector3 localPos, float w, float h,
                                   System.Action onClick)
     {
-        var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        quad.name = name;
-        Destroy(quad.GetComponent<MeshCollider>());       // swap for a Box: cheaper, and
+        // Shadow: a larger, darker, offset copy behind the key - the raw-quad
+        // equivalent of the UI.Shadow component the popup menu's Canvas
+        // buttons use, which only works on uGUI Graphics, not world-space quads.
+        float shadowW = w + keyShadowOffset * 2f;
+        float shadowH = h + keyShadowOffset * 2f;
+        Vector3 shadowPos = localPos + new Vector3(keyShadowOffset, -keyShadowOffset, 0.001f);
+        CreateRoundedQuad(name + "_Shadow", parent, shadowPos, shadowW, shadowH,
+                          keyShadowColor, keyCornerRadius);
+
+        var quad = CreateRoundedQuad(name, parent, localPos, w, h, keyColor, keyCornerRadius);
         var box = quad.AddComponent<BoxCollider>();       // we don't need textureCoord here
         box.size = new Vector3(1f, 1f, 0.05f);
-
-        quad.transform.SetParent(parent, false);
-        quad.transform.localPosition = localPos;
-        quad.transform.localRotation = Quaternion.identity;
-        quad.transform.localScale = new Vector3(w, h, 1f);
-
-        // Unlit if the pipeline has it: a keycap is UI, and UI that dims with
-        // the room is UI you cannot read. Falls back to the shader the browser
-        // plane already proves is present in the build.
-        Shader keyShader = Shader.Find("Universal Render Pipeline/Unlit")
-                        ?? _browser.GetComponent<Renderer>().sharedMaterial.shader;
-        var mat = new Material(keyShader);
-        mat.mainTexture = null;
-        quad.GetComponent<Renderer>().sharedMaterial = mat;
 
         var btn = quad.AddComponent<GeckoUIButton>();
         btn.onClick = onClick;
         btn.payload = label;
+        btn.SetColors(keyColor, keyHoverColor, keyPressedColor);
 
         var textGo = new GameObject("Label");
         textGo.transform.SetParent(quad.transform, false);
@@ -746,6 +781,31 @@ public class GeckoPageKeyboard : MonoBehaviour
         tmp.margin = new Vector4(w * 0.12f, h * 0.12f, w * 0.12f, h * 0.12f);
 
         return btn;
+    }
+
+    /// <summary>
+    /// Small dim label near a letter key's top-right corner. Parented to the
+    /// key, so it moves/scales with it automatically. keyTransform.localScale
+    /// is (w, h, 1) - dividing it back out here keeps the glyph itself
+    /// unstretched, the same trick the main key label already uses.
+    /// </summary>
+    private void AddCornerHint(Transform keyTransform, string hint, float w, float h)
+    {
+        var hintGo = new GameObject("CornerHint");
+        hintGo.transform.SetParent(keyTransform, false);
+        hintGo.transform.localScale = new Vector3(1f / w, 1f / h, 1f);
+        hintGo.transform.localPosition = new Vector3(0.30f, 0.30f, -0.011f);
+        hintGo.transform.localRotation = Quaternion.identity;
+
+        var tmp = hintGo.AddComponent<TextMeshPro>();
+        tmp.text = hint;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = new Color(0.55f, 0.55f, 0.62f, 1f);
+        tmp.enableWordWrapping = false;
+        tmp.rectTransform.sizeDelta = new Vector2(keySize * 0.4f, keySize * 0.4f);
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = 0.01f;
+        tmp.fontSizeMax = 300f;
     }
 
     // -------------------------------------------------------------------------
