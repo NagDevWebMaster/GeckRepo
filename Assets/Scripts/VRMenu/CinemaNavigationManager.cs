@@ -219,8 +219,9 @@ namespace VRCinema
             var curver = plane.GetComponent<GeckoScreenCurver>();
             if (curver != null) curver.Rebuild();
 
-            if (preShowSequencer != null)
-                preShowSequencer.Play(d.root.transform, plane.GetComponent<Renderer>());
+            var sequencer = ResolvePreShowSequencer();
+            if (sequencer != null)
+                sequencer.Play(d.root.transform, plane.GetComponent<Renderer>());
         }
 
         private Transform ResolveBrowserPlane()
@@ -229,6 +230,13 @@ namespace VRCinema
             var renderer = FindAnyObjectByType<GeckoVulkanRenderer>();
             if (renderer != null) browserPlane = renderer.transform;
             return browserPlane;
+        }
+
+        private PreShowSequencer ResolvePreShowSequencer()
+        {
+            if (preShowSequencer != null) return preShowSequencer;
+            preShowSequencer = FindAnyObjectByType<PreShowSequencer>();
+            return preShowSequencer;
         }
 
         private static void SetActive(Destination d, Destination wanted)

@@ -103,10 +103,14 @@ namespace VRCinema
         // ---------------------------------------------------------------------
         /// <summary>Blacks out (or restores) the active theater's lights on
         /// demand. Acts on whichever theater the last Play() call targeted;
-        /// a no-op if Play() has never run (e.g. still in the Lobby).</summary>
+        /// a no-op if Play() has never run (e.g. still in the Lobby), or if
+        /// that theater is no longer the active one (e.g. returned to the
+        /// Lobby after a visit). If it interrupts an in-flight Play() fade,
+        /// it also finishes that fade instantly (screen alpha snapped to 1,
+        /// media resumed) before applying the blackout.</summary>
         public void ToggleBlackout()
         {
-            if (_activeTheaterRoot == null) return;
+            if (_activeTheaterRoot == null || !_activeTheaterRoot.gameObject.activeInHierarchy) return;
             if (_running != null)
             {
                 StopCoroutine(_running);
