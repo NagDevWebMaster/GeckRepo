@@ -1,0 +1,73 @@
+// =============================================================================
+//  Unity custom main Gradle template
+//  Enable: Player Settings > Publishing Settings > Custom Main Gradle Template
+//
+//  WHY THIS FILE EXISTS
+//  --------------------
+//  An .aar does NOT carry its transitive dependencies. geckovulkan-release.aar
+//  contains only our own classes.jar + libgeckovulkanbridge.so; the
+//  `implementation 'org.mozilla.geckoview:geckoview:...'` line in the plugin's
+//  build.gradle only applied to the plugin's OWN build. Unity drops the raw .aar
+//  into its export and has no idea GeckoView is required, so none of the Gecko
+//  classes or native libraries end up in the APK and you get:
+//
+//      java.lang.NoClassDefFoundError: Failed resolution of:
+//      Lorg/mozilla/geckoview/GeckoRuntimeSettings$Builder;
+//
+//  Declaring the dependency here makes Unity's own Gradle build resolve it.
+//  The repository is declared in settingsTemplate.gradle.
+//
+//  Based on Unity 6000.5's default template - the **TOKEN** markers are
+//  substituted at build time and must be preserved verbatim.
+// =============================================================================
+apply plugin: 'com.android.library'
+apply from: '../shared/keepUnitySymbols.gradle'
+apply from: '../shared/common.gradle'
+**APPLY_PLUGINS**
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+**DEPS**
+    // GeckoView was removed - the plugin now uses android.webkit.WebView on a
+    // VirtualDisplay, so nothing needs the Gecko classes at runtime. This alone
+    // takes ~100MB of native libraries out of the APK.
+    // If the Gecko path is restored, re-add the dependency HERE and as
+    // compileOnly in AndroidPlugin/geckovulkan/build.gradle, with matching
+    // versions.
+}
+
+android {
+    namespace "com.unity3d.player"
+    ndkPath "**NDKPATH**"
+    ndkVersion "**NDKVERSION**"
+    compileSdk **APIVERSION**
+    buildToolsVersion "**BUILDTOOLS**"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        minSdk **MINSDK**
+        targetSdk **TARGETSDK**
+        ndk {
+            abiFilters **ABIFILTERS**
+            debugSymbolLevel **DEBUGSYMBOLLEVEL**
+        }
+        consumerProguardFiles 'proguard-unity.txt'**USER_PROGUARD**
+**DEFAULT_CONFIG_SETUP**
+    }
+
+    lint {
+        abortOnError false
+    }
+
+    androidResources {
+        noCompress = **BUILTIN_NOCOMPRESS** + unityStreamingAssets.tokenize(', ')
+        ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
+    }**PACKAGING**
+}
+**IL_CPP_BUILD_SETUP**
+**SOURCE_BUILD_SETUP**
+**EXTERNAL_SOURCES**

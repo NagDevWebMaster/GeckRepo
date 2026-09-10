@@ -1,0 +1,47 @@
+// =============================================================================
+//  Unity custom Gradle settings template
+//  Enable: Player Settings > Publishing Settings > Custom Gradle Settings Template
+//
+//  Adds Mozilla's Maven so the geckoview dependency declared in
+//  mainTemplate.gradle can resolve. GeckoView is NOT published to Maven Central
+//  or google(); without this repo the build fails with a "Could not find
+//  org.mozilla.geckoview:geckoview" error.
+//
+//  Note repositoriesMode is PREFER_SETTINGS, so repositories declared here win.
+//
+//  Based on Unity 6000.5's default template - the **TOKEN** markers are
+//  substituted at build time and must be preserved verbatim.
+// =============================================================================
+pluginManagement {
+    repositories {
+        **ARTIFACTORYREPOSITORY**
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+
+include ':launcher'
+include ':unityLibrary'
+**INCLUDES**
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        **ARTIFACTORYREPOSITORY**
+        google()
+        mavenCentral()
+
+        // GeckoView lives here and nowhere else.
+        maven {
+            url 'https://maven.mozilla.org/maven2/'
+            content {
+                includeGroupByRegex 'org\\.mozilla\\..*'
+            }
+        }
+
+        flatDir {
+            dirs "${project(':unityLibrary').projectDir}/libs"
+        }
+    }
+}

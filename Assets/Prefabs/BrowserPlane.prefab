@@ -1,0 +1,346 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &100000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 400000}
+  - component: {fileID: 330000}
+  - component: {fileID: 230000}
+  - component: {fileID: 640000}
+  - component: {fileID: 1140000}
+  - component: {fileID: 1140001}
+  - component: {fileID: 1140002}
+  - component: {fileID: 1140003}
+  - component: {fileID: 1140004}
+  - component: {fileID: 1140005}
+  - component: {fileID: 1140006}
+  - component: {fileID: 1140007}
+  m_Layer: 0
+  m_Name: BrowserPlane
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &400000
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 3.32, y: 0.2, z: 2}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &330000
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Mesh: {fileID: 0}
+--- !u!23 &230000
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 3678d407c8164c3f97d435ed393d7a84, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &640000
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 0}
+--- !u!114 &1140000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67bcacaac64814cfa9e4524af43d3a75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  url: https://example.com
+  textureWidth: 1920
+  textureHeight: 1080
+  flipVertically: 1
+  flipHorizontally: 1
+  treatAsLinear: 0
+  pageDensity: 2
+  anisoLevel: 8
+  xrRenderScale: 0
+  autoInitialize: 1
+  verboseLogging: 1
+--- !u!114 &1140001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f8fec4435a174d69a189df95300d436, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableRightHand: 1
+  enableLeftHand: 1
+  preferRightHand: 1
+  trackingSpace: {fileID: 0}
+  rightRayInteractor: {fileID: 0}
+  leftRayInteractor: {fileID: 0}
+  maxRayDistance: 100
+  invertPointerX: 0
+  invertPointerY: 0
+  scrollSpeed: 8
+  scrollDeadzone: 0.15
+  drawPointer: 1
+  pointerLength: 10
+  rightHandColor: {r: 0.3, g: 0.8, b: 1, a: 0.9}
+  leftHandColor: {r: 1, g: 0.7, b: 0.3, a: 0.9}
+  sendHoverEvents: 1
+  hoverPixelThreshold: 3
+  hoverRateHz: 30
+  haptics: 1
+  hapticAmplitude: 0.3
+  hapticDuration: 0.02
+  triggerThreshold: 0.5
+  logClicks: 0
+  logPointerState: 0
+--- !u!114 &1140002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7569c0d5b453d435f85ece130bd7f2c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  auditorium: {fileID: 0}
+  screenNodeName: IMAX 1.43 Screen
+  waitForModelSeconds: 5
+  forwardOffset: 0.05
+  hidePlaceholderScreen: 1
+  matchScreenAspect: 1
+  anchorNodeName: Screen Stage
+  enableGpuInstancing: 1
+  combineStaticMeshes: 0
+  cullClutter: 1
+  cullNodeNames: CeilingTile,HVACGrille,Diffuser,EquipRack,CableRaceway
+  keepSeatRows: 0
+  keepRowsFromBack: 1
+  seatRowNodeContains: Seat
+  seatRowTolerance: 0.6
+  tameLights: 1
+  lightIntensity: 5
+  maxLights: 6
+  blackVoidBackground: 1
+  voidColor: {r: 0, g: 0, b: 0, a: 1}
+  fogFalloff: 1
+  fogDensity: 0.018
+  ambient: {r: 0.15, g: 0.15, b: 0.18, a: 1}
+  disableLakeEnvironment: 1
+  alignCameraToSeating: 1
+  xrRigOverride: {fileID: 0}
+  seatNodeNameContains: _Base
+  fallbackViewDistance: 8
+  standOnRakedFloor: 1
+  floorNodeNames: Step,Carpet,Aisle,Floor,Stage,Riser,Platform
+  floorExcludeNames: LED,Light
+  resetBrowserOnMissingModel: 0
+  defaultViewDistance: 3
+  defaultEyeHeight: 1.6
+  verboseLogging: 1
+--- !u!114 &1140003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f26f91827f064e2e86f048b060ffd1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  auditorium: {fileID: 0}
+  waitForAlignment: 1
+  waitTimeoutSeconds: 8
+  xrRigOverride: {fileID: 0}
+  enableMove: 1
+  moveSpeed: 2.2
+  enableStrafe: 1
+  useHeadRelativeForward: 1
+  moveDeadzone: 0.12
+  enableTurn: 1
+  snapTurnAmount: 45
+  turnDeadzone: 0.5
+  clampToRoomBounds: 1
+  wallMargin: 0.4
+  lockFloorHeight: 1
+  stepSmoothSpeed: 8
+  blockLedgeDrops: 1
+  maxStepDown: 0.6
+  verboseLogging: 1
+--- !u!114 &1140004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47cb2f02a957c4e5a832a1c8fafd188a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  right:
+    primary: 1
+    secondary: 2
+    grip: 0
+    stickClick: 6
+    menu: 0
+    trigger: 0
+  left:
+    primary: 3
+    secondary: 4
+    grip: 9
+    stickClick: 6
+    menu: 5
+    trigger: 0
+  pressThreshold: 0.5
+  pageScrollTicks: 12
+  logButtonPresses: 0
+  logDeviceCapabilities: 0
+--- !u!114 &1140005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d29652fd23f476a9930aa3b1a218f22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startVisible: 0
+  showToggleTab: 1
+  keySize: 0.035
+  gap: 0.006
+  padding: 0.016
+  floatForward: 0.12
+  verticalGap: 0.03
+  tiltDegrees: 20
+  hideOnEnter: 1
+  autoUnshift: 1
+  panelColor: {r: 0.06, g: 0.065, b: 0.08, a: 0.96}
+  panelBorderColor: {r: 0.02, g: 0.02, b: 0.03, a: 1}
+  verboseLogging: 1
+--- !u!114 &1140006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8777acf17dd4d30bdc93be22977f6b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  curvatureDegrees: 45
+  concave: 1
+  segmentsAcross: 48
+  segmentsDown: 8
+  verboseLogging: 1
+  sourceMesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1140007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eeca12a65e44ebf969d3a6066c9c8e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  readyTimeoutSeconds: 20

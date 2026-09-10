@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 0
+    path: Assets/MainCinema.unity
+    guid: 5266df77590714c2c9ef072430cd7d70
+  - enabled: 0
+    path: Assets/Scenes/SampleScene.unity
+    guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 0
+    path: Assets/Scenes/BrowserScene.unity
+    guid: b04f94ef55b641fd955f672a18e243c0
+  - enabled: 0
+    path: Assets/Scenes/CinemaScene.unity
+    guid: 180f0e1157f34f908b9407cb01b43d73
+  - enabled: 0
+    path: Assets/Scenes/LuxuryTheaterScene.unity
+    guid: cca4abae01467466982612c9d6c246b8
+  - enabled: 1
+    path: Assets/Scenes/HomeTheaterScene.unity
+    guid: dbdb0106657f0438b9897cc3e22e9426
+  m_configObjects:
+    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 46396ed565e454fc0ae2c6fd5c094554, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: e894e8c2e09ad4209939b06e0e99eb27, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: a7cb233aa547a469aa5c9db20c9f42c4, type: 2}

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Unity custom main manifest.
+    Requires Player Settings > Publishing Settings > Custom Main Manifest = ON.
+
+    This file REPLACES Unity's UnityManifest.xml template wholesale and becomes
+    unityLibrary/src/main/AndroidManifest.xml.
+
+    ===========================================================================
+    DECLARE EXACTLY ONE <activity>, AND IT MUST MATCH
+    Player Settings > Other Settings > Application Entry Point.
+    ===========================================================================
+
+    Two separate failures hang off this, one from each direction:
+
+    1. Declare the WRONG one. Unity post-processes this file and stamps
+       android:enabled="false" on the activity that does not match the entry
+       point setting, leaving nothing launchable:
+
+           DeploymentOperationFailedException: No activity in the manifest with
+           action MAIN and category LAUNCHER
+
+    2. Declare BOTH (the obvious "make it work either way" fix). The build then
+       succeeds and installs, but the app opens as a flat 2D panel in Horizon
+       Home instead of launching immersively. OpenXR's Meta Quest Support
+       feature injects the VR markers via
+       Editor/MetaQuest/ModifyAndroidManifestMeta.cs:
+
+           ActivityIntentFilterElement =
+               SelectSingleNode("/manifest/application/activity/intent-filter")
+           ActivityElement =
+               SelectSingleNode("manifest/application/activity")
+
+       SelectSingleNode returns the FIRST match, so
+       com.oculus.intent.category.VR and com.oculus.vr.focusaware land on
+       whichever activity you listed first. If that is the disabled one, the
+       live activity never becomes a VR entry point and Horizon OS treats the
+       app as flat.
+
+    CURRENTLY SET TO: GameActivity (androidApplicationEntry: 2).
+    UnityPlayerGameActivity is declared below; UnityPlayerActivity is not.
+
+    Player Settings > Other Settings > Application Entry Point MUST be set to
+    "GameActivity" to match. BEFORE changing this file to match a different
+    Player Setting, check ProjectSettings/ProjectSettings.asset for
+    androidApplicationEntry (1 = Activity, 2 = GameActivity, 3 = both - never
+    use 3, see failure mode #2 above) - this exact mismatch is what caused a
+    "No activity with action MAIN and category LAUNCHER" failure once already.
+
+    If you switch the entry point to Activity, swap the block below for
+    com.unity3d.player.UnityPlayerActivity with theme @style/UnityThemeSelector
+    and drop the android.app.lib_name meta-data.
+
+    ===========================================================================
+    Everything VR-specific is deliberately left to the XR package. Do NOT add
+    com.oculus.supportedDevices or <uses-feature android.hardware.vr.headtracking>
+    here - ModifyAndroidManifestMeta.cs writes both, and declaring them yourself
+    collides with :unityLibrary:xrmanifest.androidlib:
+
+        Manifest merger failed : Attribute meta-data#com.oculus.supportedDevices
+        @value value=(quest3|quest3s) from [:unityLibrary] is also present at
+        [:unityLibrary:xrmanifest.androidlib] value=(quest|quest2|cambria|eureka|quest3s)
+
+    Also omitted on purpose: android:label / android:icon (Unity's
+    LauncherManifest.xml sets them) and unity.splash-* (injected by the build).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+     <uses-permission android:name="horizonos.permission.READ_SETTINGS" />
+    <uses-permission android:name="horizonos.permission.WRITE_SETTINGS" />
+    <!--
+        THE ONE THING THIS FILE ADDS BEYOND UNITY'S DEFAULT.
+
+        GeckoBootstrapApplication's static initialiser loads
+        libgeckovulkanbridge.so at process startup - before UnityPlayer builds
+        the VkDevice, which is the only window in which vkCreateDevice can be
+        intercepted to add the AHardwareBuffer extensions. Miss it and
+        GetVulkanImagePointer returns null.
+
+        Safe to declare here: Unity's LauncherManifest.xml sets only
+        android:label and android:icon on <application>, no android:name, so
+        there is nothing higher-priority to lose to.
+    -->
+    <application android:name="com.example.geckovulkan.GeckoBootstrapApplication"
+                 android:extractNativeLibs="true"
+                  android:hardwareAccelerated="true"
+                  android:largeHeap="true">
+
+        <!-- Matches androidApplicationEntry: 2 (GameActivity). See header. -->
+
+        <!-- largeHeap: the cinema system now brings a theater's WebView +
+             AHardwareBuffer + Vulkan-imported texture up and back down again
+             every time the player changes theaters (GeckoVulkanRenderer's
+             BeginInitialise/ShutdownBridge), instead of the single
+             initialize-once-for-the-app-lifetime pattern this bridge shipped
+             with. Each cycle allocates and frees a same-sized native buffer
+             (e.g. 1920x1080 RGBA8 is ~8MB, before whatever GeckoView's own
+             process needs), and Android's default per-process heap cap makes
+             repeated churn like that a real OOM risk over a long session with
+             several theater switches. This does NOT touch the AAR - it's a
+             manifest flag entirely on the app-shell side. -->
+
+        <!-- hardwareAccelerated MUST stay true while the browser is an
+             android.webkit.WebView. With it false the whole View hierarchy is
+             software-rendered, which (a) makes Widevine/EME refuse to initialise -
+             the CDM needs a GPU-composited path, and surfaces it to JS as
+             "OperationError: Non-recoverable error. Do not retry." - and
+             (b) starves Chromium's tile manager, hence "tile memory limits
+             exceeded, some content may not draw". Unity's own Vulkan output does
+             not go through the Android Canvas, so this does not affect the bridge. -->
+        <activity android:name="com.unity3d.player.UnityPlayerGameActivity"
+                  android:theme="@style/BaseUnityGameActivityTheme"
+                  android:launchMode="singleTask"
+                  android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
+                  android:hardwareAccelerated="true"
+                  android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+            <meta-data android:name="android.app.lib_name" android:value="game" />
+        </activity>
+    </application>
+</manifest>
