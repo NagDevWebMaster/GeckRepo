@@ -138,6 +138,51 @@ before the switch. This means pause and resume are not symmetric: pause
 fires for every destination (including Lobby), resume only fires for
 destinations with a screen (Lobby has nothing to resume onto).
 
+### Manual lights toggle (`PreShowSequencer` change + new menu button)
+
+A "Lights" button in the popup menu lets the player black out the current
+theater's lights on demand, and bring them back — independent of the
+automatic pre-show dim, reusing the same baseline data.
+
+`PreShowSequencer` gains:
+
+```csharp
+public void ToggleBlackout()
+```
+
+Behavior:
+
+1. Remembers the theater root passed into the most recent `Play()` call
+   (a new private field, `_activeTheaterRoot`) — `ToggleBlackout()` acts
+   on whichever theater's lights were last touched, so it always targets
+   the theater the player is actually standing in. If no `Play()` has run
+   yet (e.g. still in the Lobby), it no-ops.
+2. If a `Play()` coroutine is still running (rare — the player would have
+   to open the menu and hit this before the ~2.2s dim+fade finishes), it
+   is stopped first, the same way a second `Play()` call would stop it,
+   so the toggle and the automatic sequence never fight over the same
+   light's intensity in the same frame.
+3. Flips a `_isBlackedOut` bool and sets every light under
+   `_activeTheaterRoot` to:
+   - `0` when turning lights off, or
+   - `baseline[light] * dimFactor` when turning them back on — the same
+     movie-watching level the pre-show sequence already dims to, not full
+     baseline brightness (confirmed: toggling back should not jolt the
+     room to full brightness mid-movie).
+
+No screen-alpha or media pause/resume is touched by this toggle — it is
+lights-only, independent of what is playing.
+
+The button's label stays static ("Lights") rather than reflecting current
+state dynamically — the room itself is the feedback, and a
+dynamically-updating label would couple `PreShowSequencer` to a specific
+UI element for no real gain. Wiring follows the same pattern as the
+existing Keyboard/Close buttons (`VRMenuButton` + a persistent `onClick`
+listener calling `PreShowSequencer.ToggleBlackout()`), but — unlike those
+buttons — does **not** call `VRMenuController.CloseMenu()` afterward: a
+toggle the player may want to flip back quickly shouldn't force a
+reopen-the-menu round trip each time.
+
 ## Data flow
 
 ```
@@ -186,6 +231,14 @@ repositions.
   `browserAnchor`, so `PreShowSequencer.Play()` never runs there) — it
   stays paused, sitting on the now-inactive theater screen, until the
   player returns to a theater.
+- **Toggling blackout, then switching theaters**: the next `Play()` call
+  snaps lights back to baseline before dimming (existing step 3
+  behavior), so a manual blackout never leaks into the next theater —
+  `_isBlackedOut` should also be reset to `false` at the start of every
+  `Play()` call so the button's next press reflects the fresh theater's
+  state rather than a stale one carried over.
+- **Toggling blackout in the Lobby**: no-ops, since `_activeTheaterRoot`
+  is only ever set by `Play()`, which never runs for Lobby.
 
 ## Testing
 
@@ -208,3 +261,12 @@ repositions.
   finishes: no duplicate pause/resume calls pile up in a way that leaves
   media in the wrong state (the coroutine restart in `Play()` already
   guarantees only the latest switch's resume ever fires).
+- Open the menu in a theater, press "Lights": room goes fully dark; press
+  again: lights return to the dimmed movie level (not full brightness).
+  The video on screen is unaffected either way.
+- Press "Lights" to black out, then switch to the other theater: the new
+  theater enters at its normal dimmed level, not blacked out, and its own
+  "Lights" press starts from off-state (not carrying over the previous
+  theater's toggle).
+- Press "Lights" while still in the Lobby (if the button is visible
+  there): no-op, no errors.
