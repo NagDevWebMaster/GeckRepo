@@ -467,6 +467,26 @@ public class GeckoVulkanRenderer : MonoBehaviour
         if (verboseLogging) Log("js: " + (js.Length > 120 ? js.Substring(0, 120) + "..." : js));
     }
 
+    /// <summary>Pauses every &lt;video&gt;/&lt;audio&gt; element on the page. Fire-and-forget -
+    /// the plugin has no callback channel back into Unity, so this cannot know
+    /// whether anything was actually playing. A no-op when the page has no
+    /// media elements.</summary>
+    public void PauseMedia()
+    {
+        SendJavaScript(
+            "document.querySelectorAll('video,audio').forEach(" +
+            "function(m){try{m.pause();}catch(e){}});");
+    }
+
+    /// <summary>Resumes every &lt;video&gt;/&lt;audio&gt; element on the page. Same
+    /// fire-and-forget caveat as PauseMedia().</summary>
+    public void ResumeMedia()
+    {
+        SendJavaScript(
+            "document.querySelectorAll('video,audio').forEach(" +
+            "function(m){try{m.play();}catch(e){}});");
+    }
+
     /// <summary>
     /// Inserts <paramref name="text"/> at the caret of the focused element.
     /// Carried as base64 so quotes, backslashes and non-ASCII in the payload can
