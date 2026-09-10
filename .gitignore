@@ -65,3 +65,7 @@ mono_crash*.blob
 *_BackUpThisFolder_ButDontShipItWithYourGame/
 .DS_Store
 .utmp/
+
+# Unity convention: any folder ending in ~ is hidden from the Editor and not
+# meant to ship - package-local caches/binaries/docs (e.g. RelayApp~) live here.
+*~/
