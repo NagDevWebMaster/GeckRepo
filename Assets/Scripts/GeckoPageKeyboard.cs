@@ -252,6 +252,24 @@ public class GeckoPageKeyboard : MonoBehaviour
     private static Shader RoundedShader =>
         _roundedShader != null ? _roundedShader : (_roundedShader = Shader.Find("Custom/RoundedRectUnlit"));
 
+    private static Shader _iconShader;
+    private static Shader IconShader =>
+        _iconShader != null ? _iconShader : (_iconShader = Shader.Find("Custom/IconUnlit"));
+
+    // Loaded once per Build() from Assets/Resources - solid-black-on-transparent
+    // PNGs, rendered as a tinted alpha mask by IconUnlit.shader rather than
+    // drawn at their own colour (see that shader's header comment).
+    private Texture2D _iconKeyboard, _iconShift, _iconBackspace, _iconEnter, _iconClose;
+
+    private void LoadIcons()
+    {
+        _iconKeyboard = Resources.Load<Texture2D>("keyboard");
+        _iconShift = Resources.Load<Texture2D>("arrow");
+        _iconBackspace = Resources.Load<Texture2D>("remove");
+        _iconEnter = Resources.Load<Texture2D>("enter");
+        _iconClose = Resources.Load<Texture2D>("close");
+    }
+
     public bool IsOpen => _dialogRoot != null && _dialogRoot.gameObject.activeSelf;
 
     private void Awake()
@@ -431,6 +449,8 @@ public class GeckoPageKeyboard : MonoBehaviour
     // -------------------------------------------------------------------------
     private void Build()
     {
+        LoadIcons();
+
         // _root comes first now: in follow mode the whole cluster is laid out
         // around _root's pose and parented to it, so LateUpdate can carry the
         // tab, the panel and every key by moving one transform.
@@ -495,7 +515,7 @@ public class GeckoPageKeyboard : MonoBehaviour
             tabGo.transform.rotation = _facing;   // stays upright even while the dialog is tilted
 
             var tab = MakeKey("KeyboardTab", "⌨", tabGo.transform, Vector3.zero,
-                              tabW, tabH, Toggle);
+                              tabW, tabH, Toggle, _iconKeyboard);
             tab.SetColors(new Color(0.09f, 0.10f, 0.12f, 1f),
                           new Color(0.14f, 0.16f, 0.19f, 1f),
                           new Color(0.10f, 0.30f, 0.50f, 1f));
@@ -702,7 +722,7 @@ public class GeckoPageKeyboard : MonoBehaviour
         float ax = -totalW * 0.5f + actW * 0.5f;
 
         _shiftBtn = MakeKey("Shift", "⇧", _keysRoot, new Vector3(ax, ay, 0f),
-                            actW, keyH, ToggleShift);
+                            actW, keyH, ToggleShift, _iconShift);
         ax += actW * 0.5f + gap + actW * 0.5f;
 
         _layerBtn = MakeKey("Layer", "?123", _keysRoot, new Vector3(ax, ay, 0f),
@@ -714,25 +734,25 @@ public class GeckoPageKeyboard : MonoBehaviour
         ax += wideW * 0.5f + gap + actW * 0.5f;
 
         MakeKey("Backspace", "⌫", _keysRoot, new Vector3(ax, ay, 0f),
-                actW, keyH, () => _browser.SendBackspace());
+                actW, keyH, () => _browser.SendBackspace(), _iconBackspace);
         ax += actW + gap;
 
         var enter = MakeKey("Enter", "↵", _keysRoot, new Vector3(ax, ay, 0f),
-                            actW, keyH, PressEnter);
+                            actW, keyH, PressEnter, _iconEnter);
         enter.SetColors(new Color(0.10f, 0.45f, 0.25f, 1f),
                         new Color(0.14f, 0.60f, 0.33f, 1f),
                         new Color(0.10f, 0.70f, 0.40f, 1f));
         ax += actW + gap;
 
         MakeKey("Hide", "✕", _keysRoot, new Vector3(ax, ay, 0f),
-                actW, keyH, Hide);
+                actW, keyH, Hide, _iconClose);
 
         RefreshLabels();
     }
 
     private GeckoUIButton MakeKey(string name, string label, Transform parent,
                                   Vector3 localPos, float w, float h,
-                                  System.Action onClick)
+                                  System.Action onClick, Texture2D icon = null)
     {
         // Shadow: a larger, darker, offset copy behind the key - the raw-quad
         // equivalent of the UI.Shadow component the popup menu's Canvas
@@ -752,35 +772,75 @@ public class GeckoPageKeyboard : MonoBehaviour
         btn.payload = label;
         btn.SetColors(keyColor, keyHoverColor, keyPressedColor);
 
-        var textGo = new GameObject("Label");
-        textGo.transform.SetParent(quad.transform, false);
-        // Undo the parent's non-uniform scale so glyphs aren't stretched, and
-        // float slightly in front so it doesn't z-fight with the quad.
-        textGo.transform.localScale = new Vector3(1f / w, 1f / h, 1f);
-        textGo.transform.localPosition = new Vector3(0f, 0f, -0.01f);
-        textGo.transform.localRotation = Quaternion.identity;
+        if (icon != null)
+        {
+            AddIconQuad(quad.transform, icon, w, h);
+        }
+        else
+        {
+            var textGo = new GameObject("Label");
+            textGo.transform.SetParent(quad.transform, false);
+            // Undo the parent's non-uniform scale so glyphs aren't stretched, and
+            // float slightly in front so it doesn't z-fight with the quad.
+            textGo.transform.localScale = new Vector3(1f / w, 1f / h, 1f);
+            textGo.transform.localPosition = new Vector3(0f, 0f, -0.01f);
+            textGo.transform.localRotation = Quaternion.identity;
 
-        var tmp = textGo.AddComponent<TextMeshPro>();
-        tmp.text = label;
-        tmp.alignment = TextAlignmentOptions.Center;
-        tmp.color = Color.white;
-        tmp.enableWordWrapping = false;
-        tmp.rectTransform.sizeDelta = new Vector2(w, h);
+            var tmp = textGo.AddComponent<TextMeshPro>();
+            tmp.text = label;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.enableWordWrapping = false;
+            tmp.rectTransform.sizeDelta = new Vector2(w, h);
 
-        // A fixed fontSize has to be tuned against TMP's font-size-to-world-size
-        // ratio, which depends on the active font asset and is easy to get
-        // wrong by a large factor - exactly what caused the labels to overflow
-        // their keycaps and overlap their neighbours. Auto-sizing sidesteps
-        // that entirely: TMP shrinks the glyph until it fits inside sizeDelta,
-        // whatever the true ratio is. fontSizeMax is a generous upper bound,
-        // never the actual rendered size.
-        tmp.enableAutoSizing = true;
-        tmp.fontSizeMin = 0.01f;
-        tmp.fontSizeMax = 500f;
-        // Margin keeps glyphs off the keycap's edge instead of touching it.
-        tmp.margin = new Vector4(w * 0.12f, h * 0.12f, w * 0.12f, h * 0.12f);
+            // A fixed fontSize has to be tuned against TMP's font-size-to-world-size
+            // ratio, which depends on the active font asset and is easy to get
+            // wrong by a large factor - exactly what caused the labels to overflow
+            // their keycaps and overlap their neighbours. Auto-sizing sidesteps
+            // that entirely: TMP shrinks the glyph until it fits inside sizeDelta,
+            // whatever the true ratio is. fontSizeMax is a generous upper bound,
+            // never the actual rendered size.
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin = 0.01f;
+            tmp.fontSizeMax = 500f;
+            // Margin keeps glyphs off the keycap's edge instead of touching it.
+            tmp.margin = new Vector4(w * 0.12f, h * 0.12f, w * 0.12f, h * 0.12f);
+        }
 
         return btn;
+    }
+
+    /// <summary>
+    /// A small quad in front of the keycap, textured with an icon PNG and
+    /// rendered through IconUnlit (alpha-mask tint, ignores the source RGB -
+    /// see that shader's header). Sized with the same margin the text label
+    /// uses, so icon and text keys read as the same visual weight.
+    /// </summary>
+    private void AddIconQuad(Transform keyTransform, Texture2D icon, float w, float h)
+    {
+        float margin = 0.28f;   // fraction of the keycap kept clear on each side
+        float iconW = w * (1f - margin);
+        float iconH = h * (1f - margin);
+
+        var iconGo = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        iconGo.name = "Icon";
+        Destroy(iconGo.GetComponent<Collider>());
+        iconGo.transform.SetParent(keyTransform, false);
+        iconGo.transform.localPosition = new Vector3(0f, 0f, -0.01f);
+        iconGo.transform.localRotation = Quaternion.identity;
+        // localScale is in the KEY's local space (already scaled by w,h via
+        // the parent), so express the icon's size as a fraction of 1 rather
+        // than dividing out w/h the way the text label's undo-scale does.
+        iconGo.transform.localScale = new Vector3(iconW / w, iconH / h, 1f);
+
+        Shader shader = IconShader
+                      ?? Shader.Find("Universal Render Pipeline/Unlit")
+                      ?? _browser.GetComponent<Renderer>().sharedMaterial.shader;
+        var mat = new Material(shader);
+        mat.mainTexture = icon;
+        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", Color.white);
+        if (mat.HasProperty("_Color")) mat.SetColor("_Color", Color.white);
+        iconGo.GetComponent<Renderer>().sharedMaterial = mat;
     }
 
     /// <summary>
