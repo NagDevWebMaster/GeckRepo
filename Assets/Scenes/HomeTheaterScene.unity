@@ -3672,8 +3672,8 @@ Transform:
   m_GameObject: {fileID: 1178065782}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: -0.7071068}
-  m_LocalPosition: {x: 0, y: 2.35, z: 10.34}
-  m_LocalScale: {x: 1.2, y: 1, z: 0.375}
+  m_LocalPosition: {x: 0, y: 3.25, z: 10.34}
+  m_LocalScale: {x: 0.75, y: 1, z: 0.375}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1252832806}
@@ -4009,7 +4009,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6e323a9b61ec74776a7b7c6964217abf, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1874815109727925301, guid: 6e323a9b61ec74776a7b7c6964217abf, type: 3}
       propertyPath: m_Lightmapping
@@ -4539,7 +4539,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 1424750604}
+  - {fileID: 2100000, guid: 3678d407c8164c3f97d435ed393d7a84, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4579,9 +4579,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1285361679}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: -0.7071068}
-  m_LocalPosition: {x: 0, y: 2.35, z: 10.34}
-  m_LocalScale: {x: 1.2, y: 1, z: 0.375}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: -0.7071068}
+  m_LocalPosition: {x: 0, y: 3.25, z: 10.34}
+  m_LocalScale: {x: 0.75, y: 1, z: 0.375}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -4944,65 +4944,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1252832806}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!21 &1424750604
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: BrowserMatUnlit (Instance)
-  m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _SURFACE_TYPE_TRANSPARENT
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
-  stringTagMap:
-    RenderType: Transparent
-  disabledShaderPasses:
-  - MOTIONVECTORS
-  - DepthOnly
-  - SHADOWCASTER
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _BaseMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _AddPrecomputedVelocity: 0
-    - _AlphaClip: 0
-    - _AlphaToMask: 0
-    - _Blend: 0
-    - _BlendOp: 0
-    - _Cull: 2
-    - _Cutoff: 0.5
-    - _DstBlend: 10
-    - _DstBlendAlpha: 10
-    - _QueueOffset: 0
-    - _SampleGI: 0
-    - _SrcBlend: 5
-    - _SrcBlendAlpha: 1
-    - _Surface: 1
-    - _XRMotionVectorsPass: 1
-    - _ZWrite: 0
-    m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &1430844230
 GameObject:
   m_ObjectHideFlags: 0
@@ -7478,7 +7419,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -6329042253048580813, guid: 6eab0f05284da45f098fb0520c6d4f6e, type: 3}
       propertyPath: m_Intensity
-      value: 210
+      value: 600
       objectReference: {fileID: 0}
     - target: {fileID: -6329042253048580813, guid: 6eab0f05284da45f098fb0520c6d4f6e, type: 3}
       propertyPath: m_Lightmapping
@@ -7494,7 +7435,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 6eab0f05284da45f098fb0520c6d4f6e, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2438763647183238438, guid: 6eab0f05284da45f098fb0520c6d4f6e, type: 3}
       propertyPath: m_Enabled
@@ -7522,11 +7463,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6673803689859059508, guid: 6eab0f05284da45f098fb0520c6d4f6e, type: 3}
       propertyPath: m_Intensity
-      value: 630
+      value: 1800
       objectReference: {fileID: 0}
     - target: {fileID: 6995489745215718453, guid: 6eab0f05284da45f098fb0520c6d4f6e, type: 3}
       propertyPath: m_Intensity
-      value: 630
+      value: 1800
       objectReference: {fileID: 0}
     - target: {fileID: 6995489745215718453, guid: 6eab0f05284da45f098fb0520c6d4f6e, type: 3}
       propertyPath: m_Lightmapping
