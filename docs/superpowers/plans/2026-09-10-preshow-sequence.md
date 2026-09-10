@@ -604,7 +604,14 @@ var seq = navGo.GetComponent<VRCinema.PreShowSequencer>();
 var existing = menuRoot.Find("LightsButton");
 if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
 
-var source = menuRoot.Find("KeyboardButton").gameObject;
+// CloseButton, not KeyboardButton: KeyboardButton's own Label was cleared
+// to an empty string when its icon image was added (the visible word
+// "Keyboard" lives in a separate sibling caption object instead) - cloning
+// it would produce a blank button. CloseButton still holds real text in
+// its own Label ("X") and has no icon child to strip out, which matches
+// Lights (no icon asset) - so its Label can just hold the word directly,
+// no separate caption object needed.
+var source = menuRoot.Find("CloseButton").gameObject;
 var clone = UnityEngine.Object.Instantiate(source, menuRoot, false);
 clone.name = "LightsButton";
 
@@ -617,11 +624,6 @@ rt.sizeDelta = new Vector2(80f, 80f);
 var label = clone.transform.Find("Label").GetComponent<TMPro.TextMeshProUGUI>();
 label.text = "Lights";
 label.fontSize = 16;
-
-// The cloned Icon child came from KeyboardButton's sprite - remove it,
-// this button has no icon asset of its own yet.
-var icon = clone.transform.Find("Icon");
-if (icon != null) UnityEngine.Object.DestroyImmediate(icon.gameObject);
 
 var button = clone.GetComponent<UnityEngine.UI.Button>();
 while (button.onClick.GetPersistentEventCount() > 0)
