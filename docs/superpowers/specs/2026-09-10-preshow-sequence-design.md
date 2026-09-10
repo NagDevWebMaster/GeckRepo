@@ -11,6 +11,15 @@ brief ritual before the film starts — house lights come down, the screen
 comes to life — and the app has none of that. This spec covers approach B
 from the immersion brainstorm: dim the room lights, then fade the screen in.
 
+This spec also covers a second, tightly related problem: because there is
+only one `BrowserPlane` that moves between theaters, switching theaters
+while a video is playing currently leaves it playing invisibly (and
+audibly) in the background during the move, then still running once
+parked on the new screen at whatever timestamp it reached — not paused,
+not restarted, just wallpapered over by the pre-show dim. Switching
+theaters should pause playback immediately on switch-out and resume it
+once the new screen has faded in.
+
 Explicitly out of scope for this spec (tracked separately):
 - Ambient/curtain audio (no audio assets exist yet in the project)
 - A curtain 3D asset or wipe-style reveal (approach C, not chosen)
@@ -92,10 +101,48 @@ leaving the plane at full alpha immediately. `preShowSequencer` is a new
 serialized field, resolved via `FindAnyObjectByType` if left unassigned —
 the same optional-reference pattern already used for `browserPlane`.
 
+`GoToObject(Destination d)` gains one call at the very top, before
+anything else runs: `ResolveBrowserPlane()?.GetComponent<GeckoVulkanRenderer>()
+?.PauseMedia()`. This fires unconditionally, for every destination
+including Lobby — pausing is about leaving whatever screen was showing,
+not about where you're headed, so it is not gated behind `browserAnchor`
+the way the pre-show and resume steps are.
+
+### Media pause/resume (`GeckoVulkanRenderer` change)
+
+Two new public methods, both thin wrappers around the existing
+`SendJavaScript()` — the same `javascript:`-URI mechanism
+`GeckoPageKeyboard` already uses for text entry, so no new native plugin
+surface is needed:
+
+```csharp
+public void PauseMedia() =>
+    SendJavaScript("document.querySelectorAll('video,audio').forEach(" +
+                    "function(m){try{m.pause();}catch(e){}});");
+
+public void ResumeMedia() =>
+    SendJavaScript("document.querySelectorAll('video,audio').forEach(" +
+                    "function(m){try{m.play();}catch(e){}});");
+```
+
+The native plugin has no callback channel back into Unity (see the
+existing comment above `SendJavaScript`), so neither method can know
+whether anything was actually playing — both are fire-and-forget, and a
+no-op when the page has no media elements or nothing was playing. The
+per-element `try/catch` guards against a rejected `play()` promise (e.g.
+an autoplay-policy block) throwing into the page's own script context.
+
+`PreShowSequencer.Play()` calls `ResumeMedia()` once the screen-alpha
+lerp finishes (end of step 4), auto-resuming whatever was on the page
+before the switch. This means pause and resume are not symmetric: pause
+fires for every destination (including Lobby), resume only fires for
+destinations with a screen (Lobby has nothing to resume onto).
+
 ## Data flow
 
 ```
 Go(d) -> GoToObject(d)
+  browserPlane.PauseMedia()                             (new, unconditional)
   activates d.root, teleports rig to d.spawnPoint      (unchanged)
   MoveBrowser(d):
     if d.browserAnchor == null -> return                (unchanged, Lobby)
@@ -104,6 +151,7 @@ Go(d) -> GoToObject(d)
       -> snap lights to baseline, screen alpha = 0
       -> lerp lights down (1.2s)
       -> lerp screen alpha up (1.0s)
+      -> browserPlane.ResumeMedia()                      (new)
 ```
 
 The sequence is not a blocking modal — the player can already look around
@@ -124,6 +172,20 @@ repositions.
   across the deactivate/reactivate cycle, which is exactly why step 3
   (snap-to-baseline) runs unconditionally at the start of every `Play()`
   call rather than only once.
+- **Switching away while nothing is playing, or the page has no media**:
+  `PauseMedia()`/`ResumeMedia()` degrade to a no-op `querySelectorAll`
+  over zero elements — harmless.
+- **User manually paused a video on purpose before switching theaters**:
+  `ResumeMedia()` cannot tell the difference and will restart it anyway.
+  This is a known, accepted trade-off of having no state-query channel
+  back from the page (see Media pause/resume section) — auto-resume was
+  chosen over pause-only because it reads as more seamless in the common
+  case.
+- **Going to the Lobby while something is playing**: paused on switch-out
+  like any other destination, but never resumed (Lobby has no
+  `browserAnchor`, so `PreShowSequencer.Play()` never runs there) — it
+  stays paused, sitting on the now-inactive theater screen, until the
+  player returns to a theater.
 
 ## Testing
 
@@ -137,3 +199,12 @@ repositions.
   Lobby's own lighting is untouched by this feature.
 - Confirm the existing baked-camera-disable and screen-mesh-disable logic
   (unrelated to this feature) still behaves as before.
+- Start a video, switch theaters mid-playback: audio/video stops
+  immediately on switch-out (not left running during the transition), and
+  resumes once the new screen finishes fading in.
+- Start a video, go to the Lobby: playback stops and stays stopped (no
+  resume) until returning to a theater.
+- Start a video, switch theaters rapidly more than once before any fade
+  finishes: no duplicate pause/resume calls pile up in a way that leaves
+  media in the wrong state (the coroutine restart in `Play()` already
+  guarantees only the latest switch's resume ever fires).
