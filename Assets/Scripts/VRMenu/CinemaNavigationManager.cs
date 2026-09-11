@@ -166,13 +166,18 @@ namespace VRCinema
 
             // Pausing is about leaving whatever screen was showing, not about
             // where we're headed - fires for every destination, including
-            // Lobby, unlike the dim/fade/resume sequence below.
+            // Lobby, unlike the dim/fade/resume sequence below. Standing up
+            // is the same: leaving a seat is about where you're leaving, not
+            // where you're headed, so it isn't gated behind browserAnchor
+            // the way the pre-show sequence is.
             Transform currentPlane = ResolveBrowserPlane();
             if (currentPlane != null)
             {
                 var currentRenderer = currentPlane.GetComponent<GeckoVulkanRenderer>();
                 if (currentRenderer != null) currentRenderer.PauseMedia();
             }
+
+            if (PlayerManager.Instance != null) PlayerManager.Instance.StandUp();
 
             // Only ever touch the destinations this component owns - never sweep the
             // scene, or the browser plane and the rig would get caught in it.
