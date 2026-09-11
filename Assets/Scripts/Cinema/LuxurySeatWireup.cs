@@ -63,6 +63,7 @@ public class LuxurySeatWireup : MonoBehaviour
     private void AddWalkableColliders()
     {
         int added = 0;
+        var found = new HashSet<string>();
         foreach (var t in GetComponentsInChildren<Transform>(true))
         {
             bool isWalkable = false;
@@ -71,6 +72,7 @@ public class LuxurySeatWireup : MonoBehaviour
                 if (t.name == n) { isWalkable = true; break; }
             }
             if (!isWalkable) continue;
+            found.Add(t.name);
             if (t.GetComponent<Collider>() != null) continue;   // already has one
 
             var mesh = t.GetComponent<MeshFilter>();
@@ -85,9 +87,18 @@ public class LuxurySeatWireup : MonoBehaviour
             added++;
         }
 
-        if (added == 0)
-            Debug.LogWarning("[LuxurySeatWireup] no walkable-surface nodes found under " +
-                             name + " - locomotion will fall through the floor.");
+        if (added != kWalkableNames.Length)
+        {
+            var missing = new List<string>();
+            foreach (var n in kWalkableNames)
+            {
+                if (!found.Contains(n)) missing.Add(n);
+            }
+            Debug.LogWarning("[LuxurySeatWireup] only wired " + added + "/" + kWalkableNames.Length +
+                             " walkable-surface nodes under " + name +
+                             " - missing/renamed: [" + string.Join(", ", missing) +
+                             "] - locomotion will fall through the floor there.");
+        }
     }
 
     /// <summary>

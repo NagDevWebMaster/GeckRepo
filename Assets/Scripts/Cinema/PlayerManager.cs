@@ -17,9 +17,10 @@
 // =============================================================================
 
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Locomotion.Gravity;
 using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
 
-public class PlayerManager : MonoBehaviour
+public class PlayerManager : MonoBehaviour, IGravityController
 {
     public static PlayerManager Instance { get; private set; }
 
@@ -70,8 +71,8 @@ public class PlayerManager : MonoBehaviour
         {
             CurrentSeat.SetOccupied(false);
             CurrentSeat = null;
+            SetStandingLocomotionEnabled(true);
         }
-        SetStandingLocomotionEnabled(true);
     }
 
     /// <summary>
@@ -93,9 +94,45 @@ public class PlayerManager : MonoBehaviour
         return _moveProvider;
     }
 
+    /// <summary>
+    /// The Starter Assets rig's GravityProvider keeps applying fall motion to
+    /// the CharacterController independently of DynamicMoveProvider - without
+    /// locking it too, the player falls off the seat anchor the instant
+    /// SitAt() teleports them there. Resolved/cached the same way as
+    /// ResolveMoveProvider().
+    /// </summary>
+    private GravityProvider _gravityProvider;
+
+    private GravityProvider ResolveGravityProvider()
+    {
+        if (_gravityProvider != null) return _gravityProvider;
+        _gravityProvider = FindAnyObjectByType<GravityProvider>();
+        return _gravityProvider;
+    }
+
     private void SetStandingLocomotionEnabled(bool isEnabled)
     {
         var provider = ResolveMoveProvider();
         if (provider != null) provider.enabled = isEnabled;
+
+        var gravity = ResolveGravityProvider();
+        if (gravity != null)
+        {
+            if (isEnabled) gravity.UnlockGravity(this);
+            else gravity.TryLockGravity(this, GravityOverride.ForcedOff);
+        }
     }
+
+    // --- IGravityController -------------------------------------------------
+    // PlayerManager only needs to exist as a lock key for GravityProvider's
+    // TryLockGravity/UnlockGravity (see SetStandingLocomotionEnabled above).
+    // GravityProvider never calls these members back unless this component is
+    // registered under a LocomotionMediator, which it isn't - so they're
+    // inert stubs, kept private via explicit interface implementation.
+    bool IGravityController.canProcess => false;
+    bool IGravityController.gravityPaused => false;
+    bool IGravityController.TryLockGravity(GravityOverride gravityOverride) => false;
+    void IGravityController.RemoveGravityLock() { }
+    void IGravityController.OnGravityLockChanged(GravityOverride gravityOverride) { }
+    void IGravityController.OnGroundedChanged(bool isGrounded) { }
 }
