@@ -17,6 +17,7 @@
 // =============================================================================
 
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -74,17 +75,27 @@ public class PlayerManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Enables/disables the ACTIVE theater's GeckoCinemaLocomotion rather than
-    /// a fixed reference - which BrowserPlane instance owns that component
-    /// changes as the player moves between theaters, since only the active
-    /// theater's copy is ever live.
+    /// Enables/disables this scene's real standing-locomotion component
+    /// (the XR Interaction Toolkit Starter Assets' DynamicMoveProvider on
+    /// the XR Origin) rather than GeckoCinemaLocomotion - HomeTheaterScene
+    /// does not use the CinemaManager/BrowserPlaneAdapter/GeckoCinemaLocomotion
+    /// pipeline that method targeted (that pipeline belongs to a different,
+    /// disabled prototype scene - see PlayerManager.cs's own class header).
+    /// Resolved once and cached, same pattern as
+    /// CinemaNavigationManager.ResolveBrowserPlane().
     /// </summary>
+    private DynamicMoveProvider _moveProvider;
+
+    private DynamicMoveProvider ResolveMoveProvider()
+    {
+        if (_moveProvider != null) return _moveProvider;
+        _moveProvider = FindAnyObjectByType<DynamicMoveProvider>();
+        return _moveProvider;
+    }
+
     private void SetStandingLocomotionEnabled(bool isEnabled)
     {
-        var screen = CinemaManager.Instance != null ? CinemaManager.Instance.ActiveScreen : null;
-        if (screen == null || screen.Adapter == null) return;
-
-        var locomotion = screen.Adapter.GetComponent<GeckoCinemaLocomotion>();
-        if (locomotion != null) locomotion.enabled = isEnabled;
+        var provider = ResolveMoveProvider();
+        if (provider != null) provider.enabled = isEnabled;
     }
 }
