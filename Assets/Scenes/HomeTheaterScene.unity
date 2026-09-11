@@ -1934,6 +1934,31 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 98a37c414062e490bae885670492d038, type: 3}
   m_PrefabInstance: {fileID: 1637422402}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &403949243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 403949241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ab8e147e32c34bd9b936a13f838100f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LuxurySeatWireup
+  seatNodeContains: _Base
+--- !u!114 &403949244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 403949241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f0d003b4c86491d8d13e5fd5f123610, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SeatManager
 --- !u!1 &412321474
 GameObject:
   m_ObjectHideFlags: 0
@@ -5545,6 +5570,12 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 98a37c414062e490bae885670492d038, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 403949244}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 98a37c414062e490bae885670492d038, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 403949243}
     - targetCorrespondingSourceObject: {fileID: 5965407907279090340, guid: 98a37c414062e490bae885670492d038, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1637422425}
@@ -5833,6 +5864,7 @@ GameObject:
   - component: {fileID: 1671301691}
   - component: {fileID: 1671301690}
   - component: {fileID: 1671301692}
+  - component: {fileID: 1671301693}
   m_Layer: 0
   m_Name: Cinema Navigation
   m_TagString: Untagged
@@ -5907,6 +5939,19 @@ MonoBehaviour:
   dimFactor: 0.35
   lightsDuration: 1.2
   fadeDuration: 1
+--- !u!114 &1671301693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1671301689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a70d0b93b2146daba6934be158beba9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerManager
+  xrRig: {fileID: 1462211158}
 --- !u!1 &1674567054
 GameObject:
   m_ObjectHideFlags: 0
